@@ -1,18 +1,30 @@
 # Typora 清理未引用图片工具
 
 ---
+相信有些小伙伴在使用Typora或者其他markdown时，没有使用图床的情况下会被没有引用的图片烦扰。所以做了个简单的工具希望对大家有所帮助。
 
-## 🚀 功能亮点
+‼️ **前提**：您要在Typora进行如下设置：
+![img.png](./README.assets/img1.png)
+
+确保图片都存储在该文件夹下。
+
+## 工具介绍
+
+### 🚀 功能亮点
 
 **自动清理**：
 
-📌 自动识别 Markdown 文件中引用的图片。
+📌 自动识别 `Markdown` 文件中引用的图片。
 
 📌 清理对应的 `.assets` 文件夹中未被引用的图片。
+
+如图所示：
+![img.png](./README.assets/img2.png)
 
 **安全处理**：
 
 🔧 将未引用的图片移动到 `deleted_images` 文件夹，而非直接删除，避免误删。
+![img.png](./README.assets/img3.png)
 
 **可视化操作**：
 
