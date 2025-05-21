@@ -65,6 +65,8 @@ python typora\_assets\_cleaner.py
 | **选择文件** | 点击 “选择 Markdown 文件并清理” 按钮，在弹出的文件选择对话框中选择要处理的 Markdown 文件。                                |
 | **查看结果** | 程序会自动检查对应的 `.assets` 文件夹，并将未引用的图片移动到 `deleted_images` 文件夹。操作结果会显示在下方的文本框中。 |
 
+![img.png](./README.assets/img4.png)
+
 ### 3. 注意事项
 
 ⚠️ **文件存在性**：确保选择的 Markdown 文件和对应的 `.assets` 文件夹存在。
