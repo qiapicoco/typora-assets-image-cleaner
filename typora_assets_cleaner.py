@@ -7,8 +7,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
                              QHBoxLayout, QTextEdit, QFileDialog, QWidget, QLabel,
                              QProgressBar, QMessageBox, QSplitter, QScrollArea,
                              QGroupBox, QGridLayout, QSizePolicy)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSize, QDir
-from PyQt5.QtGui import QPixmap, QFont, QPalette, QColor
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QDir
+from PyQt5.QtGui import QPixmap, QFont, QColor
 
 
 class CleaningThread(QThread):
@@ -17,12 +17,12 @@ class CleaningThread(QThread):
     progress_signal = pyqtSignal(int, str)
     finish_signal = pyqtSignal(int)
     found_image_signal = pyqtSignal(str, bool)  # 图片路径, 是否被使用
+    stats_signal = pyqtSignal(int, int)  # 未引用数, 引用数
 
-    def __init__(self, md_file, preview_limit=50):
+    def __init__(self, md_file):
         super().__init__()
         self.md_file = md_file
         self.assets_folder = os.path.splitext(md_file)[0] + '.assets'
-        self.preview_limit = preview_limit
         self.preview_count = 0
 
     def run(self):
@@ -51,6 +51,10 @@ class CleaningThread(QThread):
 
             unused_images = [img for img in all_images if img not in used_images]
             num_unused = len(unused_images)
+            num_used = len(used_images)
+
+            # 发送统计信息
+            self.stats_signal.emit(num_unused, num_used)
 
             self.progress_signal.emit(25, f"找到 {num_unused} 张未引用的图片")
             self.update_signal.emit(f"其中 {num_unused} 张图片未在Markdown中引用\n")
@@ -59,17 +63,21 @@ class CleaningThread(QThread):
             preview_progress_base = 25
             preview_progress_range = 15
 
+            # 先预览未使用的图片
             for i, img in enumerate(unused_images):
-                if self.preview_count < self.preview_limit:
-                    self.found_image_signal.emit(os.path.join(self.assets_folder, img), False)
-                    self.preview_count += 1
+                self.found_image_signal.emit(os.path.join(self.assets_folder, img), False)
+                self.preview_count += 1
 
                 progress = preview_progress_base + int(preview_progress_range * i / max(1, len(unused_images) - 1))
                 self.progress_signal.emit(progress, f"正在准备预览...")
 
-            # 预览已使用的图片
-            for i, img in enumerate(used_images[:min(5, len(used_images))]):
+            # 再预览已使用的图片
+            for i, img in enumerate(used_images):
                 self.found_image_signal.emit(os.path.join(self.assets_folder, img), True)
+                self.preview_count += 1
+
+                progress = preview_progress_base + int(preview_progress_range * (i + len(unused_images)) / max(1, total_images - 1))
+                self.progress_signal.emit(progress, f"正在准备预览...")
 
             self.progress_signal.emit(40, "预览准备完成")
 
@@ -181,20 +189,20 @@ class ImagePreviewWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)  # 增大内边距
 
-        # 加载图片并调整大小 - 增大预览尺寸到400px
+        # 加载图片并调整大小
         pixmap = QPixmap(self.image_path)
         if pixmap.isNull():
             # 尝试添加更多错误处理，显示文件路径以便调试
             pixmap = QPixmap(400, 400)
             pixmap.fill(QColor(200, 200, 200))
 
-        scaled_pixmap = pixmap.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)  # 增大尺寸
+        scaled_pixmap = pixmap.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         # 创建图片标签
         image_label = QLabel()
         image_label.setPixmap(scaled_pixmap)
         image_label.setAlignment(Qt.AlignCenter)
-        image_label.setMinimumSize(400, 400)  # 增大最小尺寸
+        image_label.setMinimumSize(400, 400)
         image_label.setStyleSheet("""
             border: 2px solid #ddd; 
             border-radius: 8px; 
@@ -208,13 +216,13 @@ class ImagePreviewWidget(QWidget):
         name_label.setAlignment(Qt.AlignCenter)
         name_label.setWordWrap(True)
         name_label.setMaximumWidth(400)
-        name_label.setFont(QFont("微软雅黑", 12))  # 增大字体
+        name_label.setFont(QFont("微软雅黑", 12))
 
         # 创建状态标签
         status_label = QLabel("已使用" if self.is_used else "未使用")
         status_label.setAlignment(Qt.AlignCenter)
         status_label.setStyleSheet(
-            f"color: {'green' if self.is_used else 'red'}; font-weight: bold; font-size: 14px;")  # 增大字体
+            f"color: {'green' if self.is_used else 'red'}; font-weight: bold; font-size: 14px;")
 
         layout.addWidget(image_label)
         layout.addWidget(name_label)
@@ -248,7 +256,7 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
         self.setWindowTitle("Typora清理未引用图片")
-        self.setGeometry(300, 300, 1200, 750)  # 窗口尺寸
+        self.setGeometry(300, 300, 1200, 750)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -284,14 +292,14 @@ class MainWindow(QMainWindow):
         self.open_assets_btn.clicked.connect(self.open_assets_folder)
 
         top_bar_layout.addWidget(self.file_path_label)
-        top_bar_layout.addWidget(self.open_assets_btn, 0, Qt.AlignRight)  # 右对齐
+        top_bar_layout.addWidget(self.open_assets_btn, 0, Qt.AlignRight)
         top_bar_layout.setSpacing(15)
 
         main_layout.addWidget(top_bar)
 
         # 分割器 - 左侧操作区，右侧预览区
         splitter = QSplitter(Qt.Horizontal)
-        splitter.setSizes([382, 618])  # 调整比例
+        splitter.setSizes([382, 618])
 
         # 左侧操作区优化
         left_widget = QWidget()
@@ -374,8 +382,7 @@ class MainWindow(QMainWindow):
         # 日志区域优化
         result_group = QGroupBox("操作日志")
         result_group.setFont(QFont("微软雅黑", 12, QFont.Bold))
-        result_layout = QVBoxLayout(result_group)
-        result_group.setMinimumHeight(250)  # 设置最小高度
+        result_group.setMinimumHeight(250)
 
         # 统一所有QGroupBox的样式设置
         group_box_style = """
@@ -407,6 +414,7 @@ class MainWindow(QMainWindow):
                 font-size: 13px;
             }
         """)
+        result_layout = QVBoxLayout(result_group)
         result_layout.addWidget(self.result_text)
 
         left_layout.addWidget(result_group)
@@ -418,7 +426,7 @@ class MainWindow(QMainWindow):
 
         preview_group = QGroupBox("图片预览")
         preview_group.setFont(QFont("微软雅黑", 12, QFont.Bold))
-        preview_group.setMinimumHeight(500)  # 设置最小高度
+        preview_group.setMinimumHeight(500)
 
         # 使用统一的QGroupBox样式
         preview_group.setStyleSheet(group_box_style)
@@ -434,7 +442,7 @@ class MainWindow(QMainWindow):
         self.preview_container = QWidget()
         self.preview_layout = QGridLayout(self.preview_container)
         self.preview_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.preview_layout.setHorizontalSpacing(30)  # 增大间距
+        self.preview_layout.setHorizontalSpacing(30)
         self.preview_layout.setVerticalSpacing(25)
         self.preview_layout.setContentsMargins(15, 15, 15, 15)
 
@@ -445,8 +453,21 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(left_widget)
         splitter.addWidget(right_widget)
-        main_layout.addWidget(splitter, 1) # 第二个参数为伸展因子，设为1表示允许扩展
+        main_layout.addWidget(splitter, 1)
         splitter.setSizes([577, 423])
+
+        # 新增统计信息栏 - 移到底部
+        stats_bar = QWidget()
+        stats_bar.setStyleSheet("background-color: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 15px;")
+        stats_layout = QHBoxLayout(stats_bar)
+        stats_layout.setContentsMargins(10, 5, 10, 5)
+
+        self.stats_label = QLabel("图片统计: 未引用 0 张，已引用 0 张")
+        self.stats_label.setFont(QFont("微软雅黑", 13))
+        self.stats_label.setStyleSheet("font-weight: bold; color: #555;")
+
+        stats_layout.addWidget(self.stats_label)
+        main_layout.addWidget(stats_bar)
 
         # 状态栏
         self.statusBar().setStyleSheet("font-size: 12px;")
@@ -485,6 +506,7 @@ class MainWindow(QMainWindow):
         """选择文件并开始清理"""
         self.result_text.clear()
         self.clear_previews()
+        self.stats_label.setText("图片统计: 未引用 0 张，已引用 0 张")
 
         md_file, _ = QFileDialog.getOpenFileName(
             self, "选择Markdown文件", "", "Markdown文件 (*.md)"
@@ -514,6 +536,7 @@ class MainWindow(QMainWindow):
         self.thread.progress_signal.connect(self.update_progress)
         self.thread.finish_signal.connect(self.cleaning_finished)
         self.thread.found_image_signal.connect(self.add_image_preview)
+        self.thread.stats_signal.connect(self.update_stats)
         self.thread.start()
 
     def update_log(self, message):
@@ -540,8 +563,12 @@ class MainWindow(QMainWindow):
         self.progress_text.setText("就绪")
         self.thread = None
 
+    def update_stats(self, unused_count, used_count):
+        """更新统计信息"""
+        self.stats_label.setText(f"图片统计: 未引用 {unused_count} 张，已引用 {used_count} 张")
+
     def add_image_preview(self, image_path, is_used):
-        """添加图片预览（优化排列逻辑）"""
+        """添加图片预览"""
         # 计算每行可容纳的图片数量（根据当前宽度动态调整）
         container_width = self.preview_container.width()
         if container_width <= 0:
