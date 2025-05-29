@@ -1,9 +1,9 @@
 # Typora(Markdown) 清理未引用图片工具
 
 ---
-相信有些小伙伴在使用Typora或者其他markdown时，没有使用图床的情况下会被没有引用的图片烦扰。所以做了个简单的工具希望对大家有所帮助。
+相信有些小伙伴在使用 **Typora** 或者其他 **Markdown** 时，没有使用图床的情况下会被没有引用的图片烦扰。所以做了个简单的工具希望对大家有所帮助。
 
-‼️ **前提**：您要在Typora进行如下设置：
+‼️ **前提**：您要在**Typora**进行如下设置：
 ![img.png](./README.assets/img1.png)
 
 确保图片都存储在该文件夹下。
@@ -85,10 +85,10 @@ python typora\_assets\_cleaner.py
 
 
 
-打包命令：
+### 4.打包命令：
 
 ```shell
-nuitka --onefile --windows-icon-from-ico=icon.ico --enable-plugin=tk-inter --output-filename=typora_assets_cleaner.exe typora_assets_cleaner.py
+pyinstaller --onefile --icon=icon.ico typora_assets_cleaner.py
 ```
 
 希望这个工具能帮到您！
