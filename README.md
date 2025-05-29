@@ -73,7 +73,7 @@ python typora\_assets\_cleaner.py
 
 1. **操作日志**，你可以看到照片的处理过程，这里支持的图片格式包括`png`、`jpg`、`jpeg`等，程序先创建文件夹asset_images，将未引用的图片都移入该文件夹中，而不是直接丢进回收站，方便用户在后期处理。
 2. **图片预览**：这里你可以看到markdown文件未引用的图片和引用的图片，双击图片可以放大查看。
-3. **打开.assets文件夹**：在这里，你将看到你所打开的md文件所在文件夹，在此文件夹下，存在`filename.assets`文件夹和`delete.assets`文件夹。
+3. **打开.assets文件夹**：在这里，你将看到你所打开的md文件所在文件夹，在此文件夹下，存在`filename.assets`文件夹和`deleted.assets`文件夹。
 
 
 
