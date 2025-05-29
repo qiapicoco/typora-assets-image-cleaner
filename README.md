@@ -77,7 +77,7 @@ python typora\_assets\_cleaner.py
 
 
 
-### 3. 注意事项
+### 注意事项
 
 ⚠️ **文件存在性**：确保选择的 Markdown 文件和对应的 `.assets` 文件夹存在。
 
@@ -85,7 +85,7 @@ python typora\_assets\_cleaner.py
 
 
 
-### 4.打包命令：
+### 打包命令：
 
 ```shell
 pyinstaller --onefile --icon=icon.ico typora_assets_cleaner.py
