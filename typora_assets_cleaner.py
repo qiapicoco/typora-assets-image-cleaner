@@ -7,8 +7,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
                              QHBoxLayout, QTextEdit, QFileDialog, QWidget, QLabel,
                              QProgressBar, QMessageBox, QSplitter, QScrollArea,
                              QGroupBox, QGridLayout, QSizePolicy)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QDir
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QDir, QUrl
 from PyQt5.QtGui import QPixmap, QFont, QColor
+from PyQt5.QtGui import QDesktopServices
 
 
 class CleaningThread(QThread):
@@ -314,7 +315,9 @@ class MainWindow(QMainWindow):
         title_label.setAlignment(Qt.AlignCenter)
         left_layout.addWidget(title_label)
 
-        desc_label = QLabel("此工具可帮助您清理Typora Markdown文件对应的.assets文件夹中未被引用的图片")
+        # 设置描述标签为超链接
+        desc_label = QLabel('<a href="https://gitee.com/qiapicoco/typora-assets-image-cleaner">此工具可帮助您清理Typora Markdown文件对应的.assets文件夹中未被引用的图片</a>')
+        desc_label.setOpenExternalLinks(True)  # 允许点击链接打开外部浏览器
         desc_font = QFont("微软雅黑", 12)
         desc_label.setFont(desc_font)
         desc_label.setAlignment(Qt.AlignCenter)
