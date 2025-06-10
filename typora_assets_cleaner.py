@@ -518,10 +518,16 @@ class MainWindow(QMainWindow):
         self.current_md_file = md_file
         self.current_assets_folder = os.path.splitext(md_file)[0] + '.assets'
 
-        # 显示相对路径
+        # 显示文件路径
         current_dir = QDir.currentPath()
-        relative_path = QDir.toNativeSeparators(os.path.relpath(md_file, current_dir))
-        self.file_path_label.setText(f"当前文件: {relative_path}")
+        try:
+            # 尝试获取相对路径
+            relative_path = QDir.toNativeSeparators(os.path.relpath(md_file, current_dir))
+            self.file_path_label.setText(f"当前文件: {relative_path}")
+        except ValueError:
+            # 如果路径不在同一个驱动器上，则显示绝对路径
+            absolute_path = QDir.toNativeSeparators(md_file)
+            self.file_path_label.setText(f"当前文件: {absolute_path}")
 
         self.open_assets_btn.setEnabled(os.path.exists(self.current_assets_folder))
 
